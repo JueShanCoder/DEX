@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "-": "^0.0.1",
-    "D": "^1.0.0",
     "hardhat": "^2.12.7"
   },
   "devDependencies": {
