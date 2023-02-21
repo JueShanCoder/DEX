@@ -84,7 +84,7 @@ contract Exchange is ERC20 {
             address(this).balance - msg.value,
             tokenReserve
         );
-        console.log("[LOGGER INFO] ethToTokenSwap: %s, inputReserve: %s, outputReserve: %s", msg.value, address(this).balance - msg.value, tokenReserve);
+        console.log("[LOGGER INFO]: inputAmount: %s, inputReserve: %s, outputReserve: %s", msg.value, address(this).balance - msg.value, tokenReserve);
         require(tokensBought >= _mintTokens, "Insufficient about amount");
 
         IERC20(tokenAddress).transfer(msg.sender, tokensBought);
@@ -97,9 +97,10 @@ contract Exchange is ERC20 {
             tokenReserve,
             address(this).balance
         );
-
-        require(ethBought >= _mintEth, "Insufficient ouput amount");
+//        console.log("[LOGGER INFO]: inputAmount: %s, inputReserve: %s, outputReserve: %s", _tokensSold, tokenReserve, address(this).balance);
+        require(ethBought >= _mintEth, "Insufficient output amount");
         IERC20(tokenAddress).transferFrom(msg.sender, address(this), _tokensSold);
+//        console.log("[LOGGER INFO]: ethBought: %s", ethBought);
         payable(msg.sender).transfer(ethBought);
     }
 
