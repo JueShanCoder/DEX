@@ -5,14 +5,25 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "hardhat/console.sol";
 
+interface IExchange {
+    function ethToTokenSwap(uint256 _mintTokens) external payable;
+
+    function ethToTokenTransfer(uint256 _mintTokens, address _recipient) external payable;
+}
+
+interface IFactory {
+    function getExchange(address _tokenAddress) external returns (address);
+}
 
 contract Exchange is ERC20 {
     address public tokenAddress;
+    address public factoryAddress;
 
     constructor(address _token) ERC20("Zuniswap-V1", "ZUNI-V1") {
         require(_token != address(0), "invalid token address");
 
         tokenAddress = _token;
+        factoryAddress = msg.sender;
     }
 
     function addLiquidity(uint256 _tokenAmount) public payable returns (uint256) {
@@ -78,16 +89,7 @@ contract Exchange is ERC20 {
     }
 
     function ethToTokenSwap(uint256 _mintTokens) public payable {
-        uint256 tokenReserve = getReserve();
-        uint256 tokensBought = getAmount(
-            msg.value,
-            address(this).balance - msg.value,
-            tokenReserve
-        );
-        console.log("[LOGGER INFO]: inputAmount: %s, inputReserve: %s, outputReserve: %s", msg.value, address(this).balance - msg.value, tokenReserve);
-        require(tokensBought >= _mintTokens, "Insufficient about amount");
-
-        IERC20(tokenAddress).transfer(msg.sender, tokensBought);
+        ethToToken(_mintTokens, msg.sender);
     }
 
     function tokenToEthSwap(uint256 _tokensSold, uint256 _mintEth) public {
@@ -115,5 +117,46 @@ contract Exchange is ERC20 {
         IERC20(tokenAddress).transfer(msg.sender, tokenAmount);
 
         return (ethAmount, tokenAmount);
+    }
+
+    function tokenToTokenSwap(
+        uint256 _tokenSold,
+        uint256 _mintTokensBought,
+        address _tokenAddress
+    ) public {
+        address exchangeAddress = IFactory(factoryAddress).getExchange(_tokenAddress);
+        require(exchangeAddress != address(this) && exchangeAddress != address(0), "invalid exchange address");
+
+        uint256 tokenReserve = getReserve();
+        uint256 ethBought = getAmount(
+            _tokenSold,
+            tokenReserve,
+            address(this).balance
+        );
+
+        IERC20(tokenAddress).transferFrom(
+            msg.sender,
+            address(this),
+            _tokenSold
+        );
+
+        IExchange(exchangeAddress).ethToTokenTransfer{ value: ethBought } ( _mintTokensBought, msg.sender );
+    }
+
+    function ethToToken(uint256 _mintTokens, address recipient) private {
+        uint256 tokenReserve = getReserve();
+        uint256 tokensBought = getAmount(
+            msg.value,
+            address(this).balance - msg.value,
+            tokenReserve
+        );
+
+        require(tokensBought >= _mintTokens, "insufficient output amount");
+
+        IERC20(tokenAddress).transfer(recipient, tokensBought);
+    }
+
+    function ethToTokenTransfer(uint256 _mintTokens, address _recipient) public payable {
+        ethToToken(_mintTokens, _recipient);
     }
 }
