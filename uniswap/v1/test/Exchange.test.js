@@ -407,7 +407,25 @@ describe("Exchange", () => {
             expect(await token2.balanceOf(owner.address)).to.eq(0);
 
             await token.approve(exchange.address, toWei(10));
-            // TODO
+            await exchange.tokenToTokenSwap(toWei(10), toWei(4.8), token2.address);
+            // token to eth: { ethAmount = (10 * 999 * 1000) / (10 * 999 + 2000 * 1000) = 9990000 / 2009990 = 4.970173980965079 }
+            // eth to token2: { tokenAmount = (4.970173980965079 * 999 * 1000) / (4.970173980965079 * 999 + 1000 * 1000) = 4965203.806984114348828 / 1004965.203806984113921 = 4.940672361764421 }
+            expect(fromWei(await token2.balanceOf(owner.address))).to.equal(
+                "4.940672361764420452"
+            );
+            // Exchange: { ethReserve: 1000 - 4.970173980965079 , tokenReserve:  1990, LP-Token = 1000 }
+            // Exchange2: { ethReserve: 1010, tokenReserve: 990, LP-token = 1000 }
+
+            expect(await token.balanceOf(user.address)).to.eq(0);
+
+            await token2.connect(user).approve(exchange2.address, toWei(10));
+            await exchange2.connect(user).tokenToTokenSwap(toWei(10), toWei(19.6), token.address);
+            // token to eth: { ethAmount = (10 * 999 * 1000) / (10 * 999 + 2000 * 1000) = 9990000 / 2009990 = 4.970173980965079 }
+            // eth to token2: { tokenAmount = (4.970173980965079 * 999 * 1000) / (4.970173980965079 * 999 + 1000 * 1000) = 4965203.806984114348828 / 1004965.203806984113921 = 4.940672361764421 }
+
+            expect(fromWei(await token.balanceOf(user.address))).to.equal(
+                "19.958268304441613955"
+            );
         });
     });
 });
