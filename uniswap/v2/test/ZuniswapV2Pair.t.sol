@@ -110,12 +110,14 @@ contract ZuniswapV2PairTest is Test {
         assertEq(token1.balanceOf(address(this)), 10 ether - 1000);
     }
 
-    function testUnbalanced() public {
+    function testBurnUnbalanced() public {
+
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
         // reserve0: 1 ether, amount0: 1 ether
         // reserve1: 1 ether, amount1: 1 ether
         // liquidity: 1 ether - 1000
+        // totalSupply(): 1 ether
         pair.mint();
 
         token0.transfer(address(pair), 2 ether);
@@ -123,11 +125,17 @@ contract ZuniswapV2PairTest is Test {
         // reserve0: 3 ether, amount0: 2 ether
         // reserve1: 2 ether, amount1: 1 ether
         // liquidity: 1 ether * 1 ether - 1000 / 1 ether = 1 ether - 1000
+        // totalSupply: 2 ether - 1000
+        // 999999999999999000
+        console2.log("pair balance %s", pair.balanceOf(address(this)));
         pair.mint();
 
+        console2.log("balance0: %s", token0.balanceOf(address(pair)));
+        console2.log("balance1: %s", token1.balanceOf(address(pair)));
+        console2.log("liquidity: %s", pair.balanceOf(address(this)));
         // liquidity:
         // amount0: (2 ether - 2000) * 3 ether / 2 ether - 1000 =
-        // amount1: (2 ether - 2000) * 2 ether / 2 ether - 1000 = 4 ether - 4000 / 2 ether - 100 = 3.999999999999996e18 / 1.999999999999999e18 = 1.999999999999999
+        // amount1: (2 ether - 2000) * 2 ether / 2 ether - 1000 = 4 ether - 4000 / 2 ether - 100 =
         pair.burn();
         // emit log(string(token0.balanceOf(address(pair))));
 
