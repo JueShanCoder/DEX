@@ -9,8 +9,11 @@ contract ZuniswapV2PairTest is Test {
     ERC20Mintable token0;
     ERC20Mintable token1;
     ZuniswapV2Pair pair;
+    TestUser testUser;
 
     function setUp() public {
+        testUser = new TestUser();
+
         token0 = new ERC20Mintable("Token A", "TKNA");
         token1 = new ERC20Mintable("Token B", "TKNB");
 
@@ -18,6 +21,9 @@ contract ZuniswapV2PairTest is Test {
 
         token0.mint(10 ether, address(this));
         token1.mint(10 ether, address(this));
+
+        token0.mint(10 ether, address(testUser));
+        token1.mint(10 ether, address(testUser));
     }
 
     function assertReserves(uint112 expectReserve0, uint112 expectReserve1) internal {
@@ -92,14 +98,7 @@ contract ZuniswapV2PairTest is Test {
 
         // amount0: (1 ether - 1000) * 1 ether / (1 ether) = 1 ether
         // amount1: (1 ether - 1000) * 1 ether / (1 ether) = 1 ether
-        console2.log("liquidity: %s", pair.balanceOf(address(this)));
-        console2.log("balance0: %s", token0.balanceOf(address(pair)));
-        console2.log("balance1: %s", token1.balanceOf(address(pair)));
-        console2.log("totalSupply: %s", pair.totalSupply());
-        console2.log("amount0: %s", (pair.balanceOf(address(this)) * token0.balanceOf(address(pair))) / pair.totalSupply());
-        console2.log("amount0 token0 before %s", token0.balanceOf(address(this)));
         (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
-        console2.log("reserve0: %s, reserve1: %s", reserve0, reserve1);
         pair.burn();
 
         assertEq(pair.balanceOf(address(this)), 0);
@@ -114,30 +113,23 @@ contract ZuniswapV2PairTest is Test {
 
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
-        // reserve0: 1 ether, amount0: 1 ether
-        // reserve1: 1 ether, amount1: 1 ether
-        // liquidity: 1 ether - 1000
-        // totalSupply(): 1 ether
         pair.mint();
+        // token0[pair] = 1 ether
+        // token0[pair] = 1 ether
+        // pair[address(this)] = 1 ether - 1000 = 999999999999999000
+        // pair.totalSupply() = 1 ether
 
         token0.transfer(address(pair), 2 ether);
         token1.transfer(address(pair), 1 ether);
-        // reserve0: 3 ether, amount0: 2 ether
-        // reserve1: 2 ether, amount1: 1 ether
-        // liquidity: 1 ether * 1 ether - 1000 / 1 ether = 1 ether - 1000
-        // totalSupply: 2 ether - 1000
-        // 999999999999999000
-        console2.log("pair balance %s", pair.balanceOf(address(this)));
-        pair.mint();
 
-        console2.log("balance0: %s", token0.balanceOf(address(pair)));
-        console2.log("balance1: %s", token1.balanceOf(address(pair)));
-        console2.log("liquidity: %s", pair.balanceOf(address(this)));
-        // liquidity:
-        // amount0: (2 ether - 2000) * 3 ether / 2 ether - 1000 =
-        // amount1: (2 ether - 2000) * 2 ether / 2 ether - 1000 = 4 ether - 4000 / 2 ether - 100 =
+        pair.mint();
+        // token0[pair] = 3 ether
+        // token1[pair] = 2 ether
+        // pair[address(this)] = 2 ether - 1000 = 1999999999999999000
+        // pair.totalSupply() = 2 ether
         pair.burn();
-        // emit log(string(token0.balanceOf(address(pair))));
+        // amount0 = (3000000000000000000 * 1999999999999999000) / 2000000000000000000 = 2.999999999999999e18
+        // amount1 = (2000000000000000000 * 1999999999999999000) / 2000000000000000000 = 1.999999999999999e18
 
         assertEq(pair.balanceOf(address(this)), 0);
         // Only MINIMUM_LIQUIDITY
@@ -145,5 +137,61 @@ contract ZuniswapV2PairTest is Test {
         assertEq(pair.totalSupply(), 1000);
         assertEq(token0.balanceOf(address(this)), 10 ether - 1500);
         assertEq(token1.balanceOf(address(this)), 10 ether - 1000);
+    }
+
+    function testBurnUnbalancedDifferentUsers() public {
+        testUser.providerLiquidity(
+            address(pair),
+            address(token0),
+            address(token1),
+            uint256(1 ether),
+            uint256(1 ether)
+        );
+
+        assertEq(pair.balanceOf(address(this)), 0);
+        assertEq(pair.balanceOf(address(testUser)), 1 ether - 1000);
+        // pair[user] = 1 ether - 1000
+        assertEq(pair.totalSupply(), 1 ether);
+
+        token0.transfer(address(pair), 2 ether);
+        token1.transfer(address(pair), 1 ether);
+
+        // balance0: 3000000000000000000
+        // balance1: 2000000000000000000
+        // amount0: 2000000000000000000
+        // amount1: 1000000000000000000
+        // pair[this]: 1000000000000000000
+        // totalSupply(): 2000000000000000000
+
+        pair.mint();
+
+        assertEq(pair.balanceOf(address(this)), 1 ether);
+
+        pair.burn();
+
+        assertEq(pair.balanceOf(address(this)), 0);
+        assertReserves(1.5 ether, 1 ether);
+        assertEq(pair.totalSupply(), 1 ether);
+        assertEq(token0.balanceOf(address(this)), 10 ether - 0.5 ether);
+        assertEq(token1.balanceOf(address(this)), 10 ether);
+    }
+}
+
+contract TestUser {
+    function providerLiquidity(
+        address pairAddress_,
+        address token0Address_,
+        address token1Address_,
+        uint256 amount0_,
+        uint256 amount1_
+    ) public {
+        ERC20(token0Address_).transfer(pairAddress_, amount0_);
+        ERC20(token1Address_).transfer(pairAddress_, amount1_);
+
+        ZuniswapV2Pair(pairAddress_).mint();
+    }
+
+    function withdrawLiquidity(address pairAddress_) public {
+        ZuniswapV2Pair(pairAddress_).burn();
     }
 }
