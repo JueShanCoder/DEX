@@ -175,6 +175,40 @@ contract ZuniswapV2PairTest is Test {
         assertEq(token0.balanceOf(address(this)), 10 ether - 0.5 ether);
         assertEq(token1.balanceOf(address(this)), 10 ether);
     }
+
+    function testBurnZeroTotalSupply() public {
+        // 0x12; If you divide or modulo by zero.
+        vm.expectRevert(
+            hex"4e487b710000000000000000000000000000000000000000000000000000000000000012"
+        );
+        pair.burn();
+    }
+
+    function testBurnZeroLiquidity() public {
+        // Transfer and mint as a normal user.
+        token0.transfer(address(pair), 1 ether);
+        token1.transfer(address(pair), 1 ether);
+        pair.mint();
+
+        // Burn as a user who hasn't provided liquidity.
+        bytes memory prankData = abi.encodeWithSignature("burn()");
+
+        vm.prank(address(0xdeadbeef));
+        vm.expectRevert(bytes(hex"749383ad")); // InsufficientLiquidityBurned()
+        pair.burn();
+    }
+
+    function testReservesPacking() public {
+        token0.transfer(address(pair), 1 ether);
+        token1.transfer(address(pair), 2 ether);
+        pair.mint();
+
+        bytes32 val = vm.load(address(pair), bytes32(uint256(8)));
+        assertEq(
+            val,
+            hex"000000000000000000001bc16d674ec800000000000000000de0b6b3a7640000"
+        );
+    }
 }
 
 contract TestUser {
