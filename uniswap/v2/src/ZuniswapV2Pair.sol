@@ -45,12 +45,12 @@ contract ZuniswapV2Pair is ERC20, Math{
 
     function mint() public {
         // 256 - 224 = 32
-        (uint112 _reserve0, uint112 _reserve1, ) = getReserves();
+        (uint112 reserve0_, uint112 reserve1_, ) = getReserves();
 
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
-        uint256 amount0  = balance0 - _reserve0;
-        uint256 amount1  = balance1 - _reserve1;
+        uint256 amount0  = balance0 - reserve0_;
+        uint256 amount1  = balance1 - reserve1_;
 
         uint256 liquidity;
 
@@ -61,7 +61,7 @@ contract ZuniswapV2Pair is ERC20, Math{
             _mint(address(0), MINIMUM_LIQUIDITY);
         } else {
             liquidity = Math.min(
-                (amount0 * totalSupply) / _reserve0,
+                (amount0 * totalSupply) / _reserve0,z
                 (amount1 * totalSupply) / _reserve1
             );
         }
@@ -70,7 +70,7 @@ contract ZuniswapV2Pair is ERC20, Math{
 
         _mint(msg.sender, liquidity);
 
-        _update(balance0, balance1);
+        _update(balance0, balance1, reserve0_, reserve1_);
 
         emit Mint(msg.sender, amount0, amount1);
     }
@@ -127,9 +127,12 @@ contract ZuniswapV2Pair is ERC20, Math{
     }
 
     function sync() public {
+        (uint112 reserve0_, uint112 reserve1_, ) = getReserve();
         _update(
             IERC20(token0).balanceOf(address(this)),
-            IERC20(token1).balanceOf(address(this))
+            IERC20(token1).balanceOf(address(this)),
+            reserve0_,
+            reserve1_
         );
     }
 
@@ -142,7 +145,7 @@ contract ZuniswapV2Pair is ERC20, Math{
         uint32
     )
     {
-        return (reserve0, reserve1, 0);
+        return (reserve0, reserve1, blockTimestampLast);
     }
 
     function _update(
@@ -176,7 +179,11 @@ contract ZuniswapV2Pair is ERC20, Math{
         address to,
         uint256 value
     ) private {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSignature("transfer(address,uint256)", to, value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TransferFailed();
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSignature("transfer(address,uint256)", to, value)
+        );
+
+        if (!success || (data.length != 0 && !abi.decode(data, (bool))))
+            revert TransferFailed();
     }
 }
