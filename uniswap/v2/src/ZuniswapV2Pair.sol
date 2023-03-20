@@ -192,4 +192,12 @@ contract ZuniswapV2Pair is ERC20, Math{
         if (!success || (data.length != 0 && !abi.decode(data, (bool))))
             revert TransferFailed();
     }
+
+    function initialize(address token0_, address token1_) public {
+        if (token0 != address(0) || token1 != address(0))
+            revert AlreadyInitialized();
+
+        token0 = token0_;
+        token1 = token1_;
+    }
 }
