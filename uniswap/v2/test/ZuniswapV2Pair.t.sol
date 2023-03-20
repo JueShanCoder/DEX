@@ -459,7 +459,7 @@ contract ZuniswapV2PairTest is Test {
         pair.sync();
         (reserve0, reserve1, ) = pair.getReserves();
         console2.log("[2 seconds passed] reserve0 %s , reserve1 %s", reserve0, reserve1);
-        assertBlockTimestampLast(1);
+        assertBlockTimestampLast(2);
         assertCumulativePrices(initialPrice0 * 2, initialPrice1 * 2);
 
         // 3 seconds passed.
@@ -477,6 +477,7 @@ contract ZuniswapV2PairTest is Test {
         pair.mint();
 
         (uint256 newPrice0, uint256 newPrice1) = calculateCurrentPrice();
+        console2.log("initialPrice0: %s, initialPrice1: %s", initialPrice0, initialPrice1);
 
         // 0 seconds since last reserves update.
         assertCumulativePrices(initialPrice0 * 3, initialPrice1 * 3);
