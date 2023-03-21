@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./mocks/ERC20Mintable.sol";
 import {ZuniswapV2Pair} from "../src/ZuniswapV2Pair.sol";
+import "../src/ZuniswapV2Factory.sol";
 import "forge-std/Test.sol";
 import "../src/libraries/UQ112x112.sol";
 
@@ -11,14 +12,21 @@ contract ZuniswapV2PairTest is Test {
     ERC20Mintable token1;
     ZuniswapV2Pair pair;
     TestUser testUser;
-    // part 1...
+
+    // part 1 and part 3...
     function setUp() public {
         testUser = new TestUser();
 
         token0 = new ERC20Mintable("Token A", "TKNA");
         token1 = new ERC20Mintable("Token B", "TKNB");
 
-        pair = new ZuniswapV2Pair(address(token0), address(token1));
+        ZuniswapV2Factory factory = new ZuniswapV2Factory();
+        address pairAddress = factory.createPair(
+            address(token0),
+            address(token1)
+        );
+
+        pair = ZuniswapV2Pair(pairAddress);
 
         token0.mint(10 ether, address(this));
         token1.mint(10 ether, address(this));
@@ -27,13 +35,23 @@ contract ZuniswapV2PairTest is Test {
         token1.mint(10 ether, address(testUser));
     }
 
-//    // part 1...
-//    function assertReserves(uint112 expectReserve0, uint112 expectReserve1) internal {
-//        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
-//        assertEq(reserve0, expectReserve0, "unexpected reserve0");
-//        assertEq(reserve1, expectReserve1, "unexpected reserve1");
-//    }
-//
+    // part 3...
+    function encodeError(string memory error) internal pure returns (bytes memory encoded) {
+        encoded = abi.encodeWithSignature(error);
+    }
+
+    // part 3...
+    function encodeError(string memory error, uint256 a) internal pure returns (bytes memory encoded) {
+        encoded = abi.encodeWithSignature(error, a);
+    }
+
+    // part 1...
+    function assertReserves(uint112 expectReserve0, uint112 expectReserve1) internal {
+        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+        assertEq(reserve0, expectReserve0, "unexpected reserve0");
+        assertEq(reserve1, expectReserve1, "unexpected reserve1");
+    }
+
     // part 2..
     function assertCumulativePrices(
         uint256 expectedPrice0,
@@ -79,13 +97,14 @@ contract ZuniswapV2PairTest is Test {
         assertEq(pair.totalSupply(), 1 ether);
     }
 
-    // part 1...
+    // part 1 and 2 ...
     function testMintWhenTheresLiquidity() public {
         // first liquidity
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
         pair.mint();
-        // reserve0: 1 ether, reserve1: 1 ether, amount0: 1 ether, amount1: 1 ether, liquidity: 1 ether - 1000
+
+        vm.warp(37);
 
         // second liquidity
         token0.transfer(address(pair), 2 ether);
