@@ -90,7 +90,7 @@ contract ZuniswapV2PairTest is Test {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
 
-        pair.mint();
+        pair.mint(address(this));
 
         assertEq(pair.balanceOf(address(this)), 1 ether - 1000);
         assertReserves(1 ether, 1 ether);
@@ -102,14 +102,14 @@ contract ZuniswapV2PairTest is Test {
         // first liquidity
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
-        pair.mint();
+        pair.mint(address(this));
 
         vm.warp(37);
 
         // second liquidity
         token0.transfer(address(pair), 2 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
         // amount0: 2 ether, reserve0 : 3 ether
         // amount1: 2 ether, reserve1 : 3 ether
         // liquidity: (2 ether * 1 ether) / 1 ether = 2 ether
@@ -124,7 +124,7 @@ contract ZuniswapV2PairTest is Test {
         // first liquidity
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
-        pair.mint();
+        pair.mint(address(this));
         // reserve0: 1 ether, reserve1: 1 ether, amount0: 1 ether, amount1: 1 ether
         // liquidity: 1 ether - 1000
         assertEq(pair.balanceOf(address(this)), 1 ether - 1000);
@@ -134,7 +134,7 @@ contract ZuniswapV2PairTest is Test {
         // second liquidity
         token0.transfer(address(pair), 2 ether);
         token1.transfer(address(pair), 1 ether);
-        pair.mint();
+        pair.mint(address(this));
         // amount0: 2 ether, reserve0 : 3 ether
         // amount1: 1 ether, reserve1 : 2 ether
         // liquidity: (1 ether * 1 ether) / 1 ether = 1 ether
@@ -150,7 +150,7 @@ contract ZuniswapV2PairTest is Test {
         vm.expectRevert(
             hex"4e487b710000000000000000000000000000000000000000000000000000000000000011"
         );
-        pair.mint();
+        pair.mint(address(this));
     }
 
     // part 1...
@@ -159,7 +159,7 @@ contract ZuniswapV2PairTest is Test {
         token1.transfer(address(pair), 1000);
 
         vm.expectRevert(bytes(hex"d226f9d4")); // InsufficientLiquidityMinted()
-        pair.mint();
+        pair.mint(address(this));
     }
 
     // part 1...
@@ -170,7 +170,7 @@ contract ZuniswapV2PairTest is Test {
         // reserve0: 1 ether, amount0: 1 ether
         // reserve1: 1 ether, amount1: 1 ether
         // liquidity: 1 ether - 1000
-        pair.mint();
+        pair.mint(address(this));
 
         // amount0: (1 ether - 1000) * 1 ether / (1 ether) = 1 ether
         // amount1: (1 ether - 1000) * 1 ether / (1 ether) = 1 ether
@@ -190,7 +190,7 @@ contract ZuniswapV2PairTest is Test {
 
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
-        pair.mint();
+        pair.mint(address(this));
         // token0[pair] = 1 ether
         // token0[pair] = 1 ether
         // pair[address(this)] = 1 ether - 1000 = 999999999999999000
@@ -199,7 +199,7 @@ contract ZuniswapV2PairTest is Test {
         token0.transfer(address(pair), 2 ether);
         token1.transfer(address(pair), 1 ether);
 
-        pair.mint();
+        pair.mint(address(this));
         // token0[pair] = 3 ether
         // token1[pair] = 2 ether
         // pair[address(this)] = 2 ether - 1000 = 1999999999999999000
@@ -241,7 +241,7 @@ contract ZuniswapV2PairTest is Test {
         // pair[this]: 1000000000000000000
         // totalSupply(): 2000000000000000000
 
-        pair.mint();
+        pair.mint(address(this));
 
         assertEq(pair.balanceOf(address(this)), 1 ether);
 
@@ -268,7 +268,7 @@ contract ZuniswapV2PairTest is Test {
         // Transfer and mint as a normal user.
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
-        pair.mint();
+        pair.mint(address(this));
 
         // Burn as a user who hasn't provided liquidity.
         bytes memory prankData = abi.encodeWithSignature("burn()");
@@ -282,7 +282,7 @@ contract ZuniswapV2PairTest is Test {
     function testReservesPacking() public {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
 
         bytes32 val = vm.load(address(pair), bytes32(uint256(8)));
         assertEq(
@@ -295,7 +295,7 @@ contract ZuniswapV2PairTest is Test {
     function testSwapBasicScenario() public {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
         // LP-token: 根号 1 * 1 = 1 ether - 1000
         // balance0: 1 ether
         // balance1: 1 ether
@@ -324,7 +324,7 @@ contract ZuniswapV2PairTest is Test {
     function testSwapBasicScenarioReverseDirection() public {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
         // LP-Token: 根号(1000000000000000000 * 2000000000000000000 ) = 1.414213562373095e18 - 1000 = 1.414213562373094e18
 
         token1.transfer(address(pair), 0.2 ether);
@@ -349,7 +349,7 @@ contract ZuniswapV2PairTest is Test {
     function testSwapBidirectional() public {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
 
         token0.transfer(address(pair), 0.1 ether);
         token1.transfer(address(pair), 0.2 ether);
@@ -374,7 +374,7 @@ contract ZuniswapV2PairTest is Test {
     function testSwapZeroOut() public {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
 
         // InsufficientOutputAmount
         vm.expectRevert(bytes(hex"42301c23"));
@@ -385,7 +385,7 @@ contract ZuniswapV2PairTest is Test {
     function testSwapInsufficientLiquidity() public {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
 
         // InsufficientLiquidity
         vm.expectRevert(bytes(hex"bb55fd27"));
@@ -399,7 +399,7 @@ contract ZuniswapV2PairTest is Test {
     function testSwapUnderpriced() public {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
 
         token0.transfer(address(pair), 0.1 ether);
         pair.swap(0, 0.09 ether, address(this));
@@ -420,10 +420,10 @@ contract ZuniswapV2PairTest is Test {
     }
 
     // part 2...
-    function testSwapOverpriced() {
+    function testSwapOverpriced() public {
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 2 ether);
-        pair.mint();
+        pair.mint(address(this));
 
         token0.transfer(address(pair), 0.1 ether);
 
@@ -450,7 +450,7 @@ contract ZuniswapV2PairTest is Test {
         vm.warp(0);
         token0.transfer(address(pair), 1 ether);
         token1.transfer(address(pair), 1 ether);
-        pair.mint();
+        pair.mint(address(this));
         // LP-token: (1 ether * 1 ether) - 1000
 
         (
@@ -494,7 +494,7 @@ contract ZuniswapV2PairTest is Test {
         token1.transfer(address(pair), 1 ether);
 
         // reserve0: 3 ether reserve1: 2 ether
-        pair.mint();
+        pair.mint(address(this));
 
         (uint256 newPrice0, uint256 newPrice1) = calculateCurrentPrice();
         console2.log("newPrice0: %s, newPrice1: %s", newPrice0, newPrice1);
@@ -541,7 +541,7 @@ contract TestUser {
         ERC20(token0Address_).transfer(pairAddress_, amount0_);
         ERC20(token1Address_).transfer(pairAddress_, amount1_);
 
-        ZuniswapV2Pair(pairAddress_).mint();
+        ZuniswapV2Pair(pairAddress_).mint(address(this));
     }
 
     function withdrawLiquidity(address pairAddress_) public {

@@ -30,11 +30,9 @@ contract ZuniswapV2Factory {
 
         bytes memory bytecode = type(ZuniswapV2Pair).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
-
-        ZuniswapV2Pair pair = new ZuniswapV2Pair{salt: salt}();
-//        assembly {
-//            pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
-//        }
+        assembly {
+            pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
+        }
 
         IZuniswapV2Pair(pair).initialize(token0, token1);
 

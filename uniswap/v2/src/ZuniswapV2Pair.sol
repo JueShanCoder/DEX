@@ -17,6 +17,7 @@ error InsufficientLiquidity();
 error InvalidK();
 error TransferFailed();
 error BalanceOverflow();
+error AlreadyInitialized();
 
 contract ZuniswapV2Pair is ERC20, Math{
     using UQ112x112 for uint224;
@@ -38,12 +39,10 @@ contract ZuniswapV2Pair is ERC20, Math{
     event Swap(address indexed sender, uint256 amount0Out, uint256 amount1Out, address indexed to);
     event Sync(uint256 reserve0, uint256 reserve1);
 
-    constructor(address token0_, address token1_) ERC20("ZUniswpV2 Pair","ZUNIV2", 18) {
-        token0 = token0_;
-        token1 = token1_;
+    constructor() ERC20("ZUniswpV2 Pair","ZUNIV2", 18) {
     }
 
-    function mint() public {
+    function mint(address to) public {
         // 256 - 224 = 32
         (uint112 reserve0_, uint112 reserve1_, ) = getReserves();
 
@@ -68,11 +67,11 @@ contract ZuniswapV2Pair is ERC20, Math{
 
         if (liquidity <= 0) revert InsufficientLiquidityMinted();
 
-        _mint(msg.sender, liquidity);
+        _mint(to, liquidity);
 
         _update(balance0, balance1, reserve0_, reserve1_);
 
-        emit Mint(msg.sender, amount0, amount1);
+        emit Mint(to, amount0, amount1);
     }
 
     function burn() public {
