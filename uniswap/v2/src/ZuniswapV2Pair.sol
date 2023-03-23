@@ -42,16 +42,12 @@ contract ZuniswapV2Pair is ERC20, Math{
     constructor() ERC20("ZUniswpV2 Pair","ZUNIV2", 18) {
     }
 
-    function mint(address to) public {
-        // 256 - 224 = 32
+    function mint(address to) public returns (uint256 liquidity) {
         (uint112 reserve0_, uint112 reserve1_, ) = getReserves();
-
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
-        uint256 amount0  = balance0 - reserve0_;
-        uint256 amount1  = balance1 - reserve1_;
-
-        uint256 liquidity;
+        uint256 amount0 = balance0 - reserve0_;
+        uint256 amount1 = balance1 - reserve1_;
 
         if (totalSupply == 0) {
             // init liquidity.
