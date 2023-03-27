@@ -17,6 +17,7 @@ error InsufficientLiquidity();
 error InvalidK();
 error TransferFailed();
 error BalanceOverflow();
+error AlreadyInitialized();
 
 contract ZuniswapV2Pair is ERC20, Math{
     using UQ112x112 for uint224;
@@ -38,21 +39,15 @@ contract ZuniswapV2Pair is ERC20, Math{
     event Swap(address indexed sender, uint256 amount0Out, uint256 amount1Out, address indexed to);
     event Sync(uint256 reserve0, uint256 reserve1);
 
-    constructor(address token0_, address token1_) ERC20("ZUniswpV2 Pair","ZUNIV2", 18) {
-        token0 = token0_;
-        token1 = token1_;
+    constructor() ERC20("ZUniswpV2 Pair","ZUNIV2", 18) {
     }
 
-    function mint() public {
-        // 256 - 224 = 32
+    function mint(address to) public returns (uint256 liquidity) {
         (uint112 reserve0_, uint112 reserve1_, ) = getReserves();
-
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
-        uint256 amount0  = balance0 - reserve0_;
-        uint256 amount1  = balance1 - reserve1_;
-
-        uint256 liquidity;
+        uint256 amount0 = balance0 - reserve0_;
+        uint256 amount1 = balance1 - reserve1_;
 
         if (totalSupply == 0) {
             // init liquidity.
@@ -68,11 +63,11 @@ contract ZuniswapV2Pair is ERC20, Math{
 
         if (liquidity <= 0) revert InsufficientLiquidityMinted();
 
-        _mint(msg.sender, liquidity);
+        _mint(to, liquidity);
 
         _update(balance0, balance1, reserve0_, reserve1_);
 
-        emit Mint(msg.sender, amount0, amount1);
+        emit Mint(to, amount0, amount1);
     }
 
     function burn() public {
@@ -191,5 +186,13 @@ contract ZuniswapV2Pair is ERC20, Math{
 
         if (!success || (data.length != 0 && !abi.decode(data, (bool))))
             revert TransferFailed();
+    }
+
+    function initialize(address token0_, address token1_) public {
+        if (token0 != address(0) || token1 != address(0))
+            revert AlreadyInitialized();
+
+        token0 = token0_;
+        token1 = token1_;
     }
 }
